@@ -8,6 +8,8 @@ RABBIT_AGE = 30
 NUM_TIGERS = 3
 TIGER_AGE = 100
 
+SIGHT = 600
+
 class Actor(SpriteNode):
 	def __init__(self, img, max_x, max_y, *args, **kwargs):
 		SpriteNode.__init__(self, img, *args, **kwargs)
@@ -25,6 +27,8 @@ class Actor(SpriteNode):
 		self.age = uniform(0,5)
 		#fullness
 		self.fullness = uniform(45, 55)
+		#how high they are on the food chain
+		self.foodChain = 0
 		
 	def update(self, neighbors):
 		self.stayOnScreen(neighbors)
@@ -32,6 +36,8 @@ class Actor(SpriteNode):
 		self.updateStats()
 		if self.canMate():
 			self.tryToMate(neighbors)
+		elif self.isHungry():
+			self.tryToEat(neighbors)
 		else:
 			self.wander(neighbors)
 		
@@ -72,8 +78,19 @@ class Actor(SpriteNode):
 		if self.canMate():
 			for n in neighbors:
 				if type(self) == type(n):
-					if abs(n.position - self.position) < 600:
+					if abs(n.position - self.position) < SIGHT:
 						self.v = self.getVectorToward(n)
+						
+	def tryToEat(self, neighbors):
+		if self.isHungry():
+			for n in neighbors:
+				if n.foodChain < self.foodChain:
+					if abs(n.position - self.position) < SIGHT:
+						#makes them go too fast
+						self.v = self.getVectorToward(n) * 1.001
+		
+	def isHungry(self):
+		return self.fullness < 50
 		
 	def turn(self, angle):
 		if angle <= 0 or angle >= math.pi * 2:
@@ -119,6 +136,7 @@ class Rabbit(Actor):
 	def __init__(self, max_x, max_y, *args, **kwargs):
 		img = 'emj:Rabbit_Face'
 		Actor.__init__(self, img, max_x, max_y, *args, **kwargs)
+		self.foodChain = 2
 		
 	def update(self, neighbors):
 		Actor.update(self, neighbors)
@@ -146,12 +164,18 @@ class Tiger(Actor):
 	def __init__(self, max_x, max_y, *args, **kwargs):
 		img = 'emj:Tiger_Face'
 		Actor.__init__(self, img, max_x, max_y, *args, **kwargs)
+		self.foodChain = 5
 		
 	def update(self, neighbors):
 		Actor.update(self, neighbors)
 		self.depleteFullness()
 		if self.age >= uniform(TIGER_AGE,TIGER_AGE+20):
 			self.die()
+			
+	def chase(self, neighbors):
+		for n in neighbors:
+			if self.distanceTo(n) < 100 and isinstance(n, Rabbit):
+				self.v = self.getVectorToward(n) * -1.02
 		
 	def collide(self, neighbors):
 		for n in neighbors:
