@@ -5,7 +5,7 @@ A = Action
 NUM_RABBITS = 20
 RABBIT_AGE = 30
 
-NUM_TIGERS = 5
+NUM_TIGERS = 3
 TIGER_AGE = 100
 
 class Actor(SpriteNode):
